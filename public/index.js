@@ -1,7 +1,7 @@
 let transactions = [];
 let myChart;
-
-fetch("/api/transaction")
+function getData(){
+  fetch("/api/transaction")
   .then((response) => {
     return response.json();
   })
@@ -13,6 +13,9 @@ fetch("/api/transaction")
     populateTable();
     populateChart();
   });
+
+}
+getData();
 
 function populateTotal() {
   // reduce transaction amounts to a single total value
@@ -80,7 +83,8 @@ function populateChart() {
   });
 }
 function saveRecord(data) {
-  useIndexedDb("expense", "expenseStore", "put", data);
+  console.log(data);
+ useIndexedDb("expense", "expenseStore", "put", data);
 }
 function sendTransaction(isAdding) {
   let nameEl = document.querySelector("#t-name");
@@ -125,12 +129,7 @@ function sendTransaction(isAdding) {
     },
   })
     .then((response) => {
-      useIndexedDb("expense", "expenseStore", "get").then((results) => {
-        console.log(results);
-      });
-      useIndexedDb("expense", "expenseStore", "clear").then((results) => {
-        results.forEach((e) => console.log(e));
-      });
+      // localStorage.setItem("expense", response);
       return response.json();
     })
     .then((data) => {
@@ -140,6 +139,7 @@ function sendTransaction(isAdding) {
         // clear form
         nameEl.value = "";
         amountEl.value = "";
+        getData();
       }
     })
     .catch((err) => {
@@ -159,8 +159,63 @@ document.querySelector("#add-btn").onclick = function () {
 document.querySelector("#sub-btn").onclick = function () {
   sendTransaction(false);
 };
+navigator.serviceWorker.getRegistrations().then(function(registrations) {
+  for(let registration of registrations) {
+   registration.unregister()
+ } 
+})
+self.addEventListener("load", ()=>{
+  
+})
+self.addEventListener("online", ()=>{
+  useIndexedDb("expense", "expenseStore", "get").then((results) => {
+    results.forEach((e) => {
+    delete e._id;
+    fetch("/api/transaction", {
+      method: "POST",
+      body: JSON.stringify(e),
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        // localStorage.setItem("expense", response);
+        return response.json();
+      })
+      .then((data) => {
+        if (data.errors) {
+          errorEl.textContent = "Missing Information";
+        } else {
+          // clear form
+          // nameEl.value = "";
+          // amountEl.value = "";
+          getData();
+        }
+      })
+      .catch((err) => {
+        // fetch failed, so save in indexed db
+        saveRecord(e);
+  
+        // clear form
+        // nameEl.value = "";
+        // amountEl.value = "";
+      })})
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for(let registration of registrations) {
+       registration.unregister()
+     } 
+    });
+    getData();
+  });
+  console.log("Finished online reconnect!");
+  useIndexedDb("expense", "expenseStore", "clear").then((results) => {
+    results.forEach((e) => console.log("clear", e));
+  });
+   
+})
 
-//new
+// //new
 function useIndexedDb(databaseName, storeName, method, object) {
   return new Promise((resolve, reject) => {
     const request = window.indexedDB.open(databaseName, 1);
@@ -168,7 +223,7 @@ function useIndexedDb(databaseName, storeName, method, object) {
 
     request.onupgradeneeded = function (e) {
       const db = request.result;
-      db.createObjectStore(storeName, { keyPath: "_id" });
+      db.createObjectStore(storeName, { keyPath: "_id" , autoIncrement: true });
     };
 
     request.onerror = function (e) {

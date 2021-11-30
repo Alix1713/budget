@@ -20,8 +20,8 @@ self.addEventListener("install", (event) => {
         console.log(cache, FILES_TO_CACHE);
         cache.addAll(FILES_TO_CACHE);
       })
-      .then(() => self.skipWaiting())
   );
+  self.skipWaiting();
 });
 
 // The activate handler takes care of cleaning up old caches.
@@ -43,8 +43,8 @@ self.addEventListener("activate", (event) => {
           })
         );
       })
-      .then(() => self.clients.claim())
   );
+  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -52,8 +52,9 @@ self.addEventListener("fetch", (event) => {
   console.log(event.request);
   if (
     event.request.method !== "GET" ||
-    !event.request.url.startsWith(self.location.origin)
+    event.request.url.startsWith(self.location.origin)
   ) {
+    console.log("worst project");
     event.respondWith(fetch(event.request));
     return;
   }
