@@ -1,19 +1,18 @@
 let transactions = [];
 let myChart;
-function getData(){
+function getData() {
   fetch("/api/transaction")
-  .then((response) => {
-    return response.json();
-  })
-  .then((data) => {
-    // save db data on global variable
-    transactions = data;
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      // save db data on global variable
+      transactions = data;
 
-    populateTotal();
-    populateTable();
-    populateChart();
-  });
-
+      populateTotal();
+      populateTable();
+      populateChart();
+    });
 }
 getData();
 
@@ -84,7 +83,7 @@ function populateChart() {
 }
 function saveRecord(data) {
   console.log(data);
- useIndexedDb("expense", "expenseStore", "put", data);
+  useIndexedDb("expense", "expenseStore", "put", data);
 }
 function sendTransaction(isAdding) {
   let nameEl = document.querySelector("#t-name");
@@ -159,52 +158,51 @@ document.querySelector("#add-btn").onclick = function () {
 document.querySelector("#sub-btn").onclick = function () {
   sendTransaction(false);
 };
-navigator.serviceWorker.getRegistrations().then(function(registrations) {
-  for(let registration of registrations) {
-   registration.unregister()
- } 
-})
-self.addEventListener("load", ()=>{
-  
-})
-self.addEventListener("online", ()=>{
+navigator.serviceWorker.getRegistrations().then(function (registrations) {
+  for (let registration of registrations) {
+    registration.unregister();
+  }
+});
+self.addEventListener("load", () => {});
+self.addEventListener("online", () => {
   useIndexedDb("expense", "expenseStore", "get").then((results) => {
     results.forEach((e) => {
-    delete e._id;
-    fetch("/api/transaction", {
-      method: "POST",
-      body: JSON.stringify(e),
-      headers: {
-        Accept: "application/json, text/plain, */*",
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        // localStorage.setItem("expense", response);
-        return response.json();
+      delete e._id;
+      fetch("/api/transaction", {
+        method: "POST",
+        body: JSON.stringify(e),
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json",
+        },
       })
-      .then((data) => {
-        if (data.errors) {
-          errorEl.textContent = "Missing Information";
-        } else {
+        .then((response) => {
+          // localStorage.setItem("expense", response);
+          return response.json();
+        })
+        .then((data) => {
+          if (data.errors) {
+            errorEl.textContent = "Missing Information";
+          } else {
+            // clear form
+            // nameEl.value = "";
+            // amountEl.value = "";
+            getData();
+          }
+        })
+        .catch((err) => {
+          // fetch failed, so save in indexed db
+          saveRecord(e);
+
           // clear form
           // nameEl.value = "";
           // amountEl.value = "";
-          getData();
-        }
-      })
-      .catch((err) => {
-        // fetch failed, so save in indexed db
-        saveRecord(e);
-  
-        // clear form
-        // nameEl.value = "";
-        // amountEl.value = "";
-      })})
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-       registration.unregister()
-     } 
+        });
+    });
+    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+      for (let registration of registrations) {
+        registration.unregister();
+      }
     });
     getData();
   });
@@ -212,10 +210,8 @@ self.addEventListener("online", ()=>{
   useIndexedDb("expense", "expenseStore", "clear").then((results) => {
     results.forEach((e) => console.log("clear", e));
   });
-   
-})
+});
 
-// //new
 function useIndexedDb(databaseName, storeName, method, object) {
   return new Promise((resolve, reject) => {
     const request = window.indexedDB.open(databaseName, 1);
@@ -223,7 +219,7 @@ function useIndexedDb(databaseName, storeName, method, object) {
 
     request.onupgradeneeded = function (e) {
       const db = request.result;
-      db.createObjectStore(storeName, { keyPath: "_id" , autoIncrement: true });
+      db.createObjectStore(storeName, { keyPath: "_id", autoIncrement: true });
     };
 
     request.onerror = function (e) {

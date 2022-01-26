@@ -14,12 +14,10 @@ const RUNTIME_CACHE = "runtime-cache";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => {
-        console.log(cache, FILES_TO_CACHE);
-        cache.addAll(FILES_TO_CACHE);
-      })
+    caches.open(STATIC_CACHE).then((cache) => {
+      console.log(cache, FILES_TO_CACHE);
+      cache.addAll(FILES_TO_CACHE);
+    })
   );
   self.skipWaiting();
 });
@@ -58,7 +56,6 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(event.request));
     return;
   }
-  //I got stuck here with the fetch of the event
 
   // handle runtime GET requests for data from /api routes
   if (event.request.url.includes("/api/images")) {
